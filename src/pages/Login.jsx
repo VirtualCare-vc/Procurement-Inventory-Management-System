@@ -8,12 +8,34 @@ export default function Login() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.email && form.password) {
-      localStorage.setItem("token", "sample_token");
-      navigate("/"); 
+
+    if (!form.email || !form.password) {
       alert("Please enter email and password");
+      return;
+    }
+
+    try {
+      console.log("asdasdasd")
+      const response = await fetch("http://localhost:3000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("token", data.access_token);
+        alert("Login successful!");
+        navigate("/"); // ✅ go to dashboard
+      } else {
+        alert(data.message || "Invalid credentials. Please try again.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Unable to connect to server.");
     }
   };
 
@@ -23,6 +45,7 @@ export default function Login() {
         <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
           Welcome Back 👋
         </h2>
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -53,6 +76,7 @@ export default function Login() {
               required
             />
           </div>
+          
 
           <button
             type="submit"
@@ -62,9 +86,12 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center text-sm  text-gray-600 mt-6">
+        <p className="text-center text-sm text-gray-600 mt-6">
           Don’t have an account?{" "}
-          <Link to="/signup" className="text-blue-600 cursor-pointer font-medium hover:underline">
+          <Link
+            to="/signup"
+            className="text-blue-600 cursor-pointer font-medium hover:underline"
+          >
             Sign Up
           </Link>
         </p>

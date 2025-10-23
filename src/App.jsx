@@ -12,7 +12,9 @@ import WarehouseSetup from "./pages/WarehouseSetup";
 import PrincipalSetup from "./pages/PrincipalSetup";
 import TradeOffersSetup from "./pages/TradeOffersSetup";
 import InventoryManagement from "./pages/InventoryManagement";
+import ItemMasterSetup from "./pages/ItemMasterSetup";
 
+// Layout & Routing
 import PrivateRoute from "./routes/PrivateRoute";
 import PrivateLayout from "./layout/PrivateLayout";
 
@@ -20,11 +22,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/*  PUBLIC ROUTES */}
+        {/* PUBLIC ROUTES */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/*  PRIVATE ROUTES */}
+        {/* PRIVATE ROUTES */}
         <Route element={<PrivateRoute />}>
           <Route element={<PrivateLayout />}>
             <Route path="/" element={<Dashboard />} />
@@ -35,6 +37,7 @@ function App() {
             <Route path="/PrincipalSetup" element={<PrincipalSetup />} />
             <Route path="/TradeOffersSetup" element={<TradeOffersSetup />} />
             <Route path="/InventoryManagement" element={<InventoryManagement />} />
+            <Route path="/ItemMasterSetup" element={<ItemMasterSetup />} />
           </Route>
         </Route>
       </Routes>

@@ -15,6 +15,7 @@ import {
   Layers,
   X,
 } from "lucide-react";
+import ItemProductSetup from "../pages/ItemProductSetup";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -83,6 +84,12 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                 label="Warehouse Setup"
                 onClick={() => navigate("/warehouse-setup")}
               />
+              <SidebarItem
+  icon={<Layers size={16} />}
+  label="Item Master Setup"
+  onClick={() => navigate("/ItemMasterSetup")}
+/>
+
             </ul>
           </div>
 

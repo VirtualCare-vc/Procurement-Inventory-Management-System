@@ -4,18 +4,43 @@ import { Link, useNavigate } from "react-router-dom";
 export default function Signup() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Fake signup logic
-    if (form.name && form.email && form.password) {
-      localStorage.setItem("token", "sample_token");
-      navigate("/");
-    } else {
+
+    if (!form.name || !form.email || !form.password) {
       alert("Please fill all fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:3000/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Signup successful! Please log in to continue.");
+        navigate("/login"); // ✅ redirect to login after signup
+      } else if (response.status === 409) {
+        alert("Email already in use. Please log in instead.");
+        navigate("/login");
+      } else {
+        alert(data.message || "Signup failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error during signup:", error);
+      alert("Something went wrong. Please check the server connection.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -25,6 +50,7 @@ export default function Signup() {
         <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
           Create Your Account 🚀
         </h2>
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -70,18 +96,38 @@ export default function Signup() {
               required
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Organization Name
+            </label>
+            <input
+              type="string"
+              name="organizationName"
+              value={form.oname}
+              onChange={handleChange}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Organization Name"
+              required
+            />
+          </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 cursor-pointer text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 transition"
+            disabled={loading}
+            className={`w-full ${
+              loading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
+            } cursor-pointer text-white font-medium py-2.5 rounded-lg transition`}
           >
-            Create Account
+            {loading ? "Creating..." : "Create Account"}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-6">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 cursor-pointer font-medium hover:underline">
+          <Link
+            to="/login"
+            className="text-blue-600 cursor-pointer font-medium hover:underline"
+          >
             Sign In
           </Link>
         </p>
