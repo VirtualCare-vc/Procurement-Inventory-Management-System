@@ -13,7 +13,7 @@ import {
   ClipboardList,
   FileText,
   Layers,
-  X,
+  X,  
 } from "lucide-react";
 import ItemProductSetup from "../pages/ItemProductSetup";
 import React from "react";
@@ -40,7 +40,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
       >
         {/* Logo + Close Button */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <span className="text-blue-600 text-xl font-semibold">✱ DistroFlow</span>
+          <span className="text-blue-600 text-xl font-semibold">DistroFlow</span>
           <button
             className="lg:hidden text-gray-600 hover:text-gray-900"
             onClick={() => setSidebarOpen(false)}
@@ -59,11 +59,11 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             </h3>
             <ul className="space-y-1">
               {/* Matches /signup */}
-              <SidebarItem
+               {/* <SidebarItem
                 icon={<Home size={16} />}
                 label="Sign Up & Onboarding"
                 onClick={() => navigate("/signup")}
-              />
+              /> */}
               <SidebarItem
                 icon={<Building2 size={16} />}
                 label="Company Setup"
@@ -85,11 +85,47 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                 onClick={() => navigate("/warehouse-setup")}
               />
               <SidebarItem
-  icon={<Layers size={16} />}
-  label="Item Master Setup"
-  onClick={() => navigate("/ItemMasterSetup")}
-/>
+                icon={<Layers size={16} />}
+                label="Item Master Setup"
+                onClick={() => navigate("/ItemMasterSetup")}
+              />
+            </ul>
+          </div>
 
+          {/* CUSTOM FORM */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 mb-2">CUSTOM FORM</h3>
+            <ul className="space-y-1">
+              <SidebarItem
+                icon={<Users size={16} />}
+                label="Tenant User Setup"
+                onClick={() => navigate("/TenantUserForm")}
+              />
+               {/* <SidebarItem
+                icon={<Users size={16} />}
+                label="Vendors Setup"
+                onClick={() => navigate("/VendorsForm")}
+              /> */}
+              <SidebarItem
+                icon={<Users size={16} />}
+                label="Assign User to Vendor"
+                onClick={() => navigate("/AssignUserToVendorForm")}
+              />
+              <SidebarItem
+                icon={<Building2 size={16} />}
+                label="Create Vendor"
+                onClick={() => navigate("/CreateVendorForm")}
+              />
+              <SidebarItem
+                icon={<Building2 size={16} />}
+                label="Create Company"
+                onClick={() => navigate("/CreateCompanyForm")}
+              />
+              <SidebarItem
+                icon={<Package size={16} />}
+                label="Create Item"
+                onClick={() => navigate("/CreateItemForm")}
+              />
             </ul>
           </div>
 
@@ -151,12 +187,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   );
 }
 
+// Updated SidebarItem with cursor-pointer
 function SidebarItem({ icon, label, onClick, active }) {
   return (
     <li>
       <button
         onClick={onClick}
-        className={`flex items-center gap-3 w-full px-3 py-2 rounded-md text-left transition 
+        className={`flex items-center gap-3 w-full px-3 py-2 rounded-md text-left transition cursor-pointer
           ${
             active
               ? "bg-gray-100 text-gray-900 font-medium"

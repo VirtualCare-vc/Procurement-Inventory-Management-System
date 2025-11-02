@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { BaseUrl } from "../App";
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    tenantName: "",
+  });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) =>
@@ -12,24 +18,25 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.email || !form.password) {
+    if (!form.fullName || !form.email || !form.password || !form.tenantName) {
       alert("Please fill all fields");
       return;
     }
 
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:3000/auth/signup", {
+      const response = await fetch(`${BaseUrl}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
       const data = await response.json();
+      console.log("Signup response:", data);
 
       if (response.ok) {
         alert("Signup successful! Please log in to continue.");
-        navigate("/login"); // ✅ redirect to login after signup
+        navigate("/login");
       } else if (response.status === 409) {
         alert("Email already in use. Please log in instead.");
         navigate("/login");
@@ -58,8 +65,8 @@ export default function Signup() {
             </label>
             <input
               type="text"
-              name="name"
-              value={form.name}
+              name="fullName"
+              value={form.fullName}
               onChange={handleChange}
               className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               placeholder="John Doe"
@@ -96,14 +103,15 @@ export default function Signup() {
               required
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Organization Name
             </label>
             <input
-              type="string"
-              name="organizationName"
-              value={form.oname}
+              type="text"
+              name="tenantName"
+              value={form.tenantName}
               onChange={handleChange}
               className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               placeholder="Organization Name"

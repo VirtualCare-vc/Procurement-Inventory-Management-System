@@ -13,10 +13,22 @@ import PrincipalSetup from "./pages/PrincipalSetup";
 import TradeOffersSetup from "./pages/TradeOffersSetup";
 import InventoryManagement from "./pages/InventoryManagement";
 import ItemMasterSetup from "./pages/ItemMasterSetup";
+import Vendors from "./pages/Forms/VendorsForm";
+import AssignUserToVendorForm from "./pages/Forms/AssignUserToVendorForm"; // Fixed typo: ssign → Assign
+import CreateVendorForm from "./pages/Forms/CreateVendorForm";
+import CreateItemForm from "./pages/Forms/CreateItemForm";
+
+// Forms
+import TenantUserForm from "./pages/Forms/TenantUserForm";
+import CreateCompanyForm from "./pages/Forms/CreateCompanyForm";
 
 // Layout & Routing
 import PrivateRoute from "./routes/PrivateRoute";
 import PrivateLayout from "./layout/PrivateLayout";
+
+// Base URL
+export const BaseUrl = "http://192.168.100.18:3000";
+
 
 function App() {
   return (
@@ -38,6 +50,12 @@ function App() {
             <Route path="/TradeOffersSetup" element={<TradeOffersSetup />} />
             <Route path="/InventoryManagement" element={<InventoryManagement />} />
             <Route path="/ItemMasterSetup" element={<ItemMasterSetup />} />
+            <Route path="/TenantUserForm" element={<TenantUserForm />} />
+            <Route path="/VendorsForm" element={<Vendors />} />
+            <Route path="/CreateCompanyForm" element={<CreateCompanyForm />} />
+            <Route path="/AssignUserToVendorForm" element={<AssignUserToVendorForm />} />
+            <Route path="/CreateVendorForm" element={<CreateVendorForm />} />
+            <Route path="/CreateItemForm" element={<CreateItemForm />} />
           </Route>
         </Route>
       </Routes>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { BaseUrl } from "../App";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function Login() {
 
     try {
       console.log("asdasdasd")
-      const response = await fetch("http://localhost:3000/auth/login", {
+      const response = await fetch(`${BaseUrl}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -28,6 +29,7 @@ export default function Login() {
 
       if (response.ok) {
         localStorage.setItem("token", data.access_token);
+
         alert("Login successful!");
         navigate("/"); // ✅ go to dashboard
       } else {
