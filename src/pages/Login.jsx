@@ -13,12 +13,22 @@ export default function Login() {
     e.preventDefault();
 
     if (!form.email || !form.password) {
-      alert("Please enter email and password");
+      // alert("Please enter email and password");
       return;
     }
 
+    // Check for existing token and remove it if present
+    const existingToken = localStorage.getItem("token");
+    if (existingToken) {
+      console.log("Token exists. Logging out and clearing token.");
+      localStorage.removeItem("token");
+      // Optionally redirect to login before proceeding
+      // window.location.href = '/login'; 
+    }
+
     try {
-      console.log("asdasdasd")
+      console.log("Attempting login...");
+
       const response = await fetch(`${BaseUrl}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -28,9 +38,11 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
+        // Save the new token to localStorage
         localStorage.setItem("token", data.access_token);
+        console.log("Login successful. Token stored:", data.access_token);
 
-        alert("Login successful!");
+        // Redirect to dashboard or home page
         navigate("/"); // ✅ go to dashboard
       } else {
         alert(data.message || "Invalid credentials. Please try again.");
@@ -78,7 +90,6 @@ export default function Login() {
               required
             />
           </div>
-          
 
           <button
             type="submit"

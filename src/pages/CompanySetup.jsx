@@ -25,7 +25,7 @@ const CompanySetup = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert("Company created successfully!");
+    // alert("Company created successfully!");
     console.log(company);
   };
 
