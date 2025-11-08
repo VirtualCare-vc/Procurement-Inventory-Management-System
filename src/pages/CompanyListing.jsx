@@ -1,31 +1,54 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
-const companies = [
-  { Phone: '#123456789', vendor: 'TechnoSoft LLC', Role: 'Developer', User: '$52000', Currency: '$ Dollar', Company: 'Paid', name: 'Acme Technologies' },
-  { Phone: '#56787654', vendor: 'GreenLeaf Enterprises', Role: 'Manager', User: '$41000', Currency: '€ Euro', Company: 'Unpaid', name: 'BlueSky Solutions' },
-  { Phone: '#9101544', vendor: 'CyberVision Ltd.', Role: 'Designer', User: '$35000', Currency: '$ Dollar', Company: 'Paid', name: 'NovaCore Systems' },
-  { Phone: '#11214554', vendor: 'Alpha Innovations', Role: 'Support', User: '$27500', Currency: 'Yen JPY', Company: 'Pending', name: 'Quantum Dynamics' },
-  { Phone: '#31414545', vendor: 'Innovative Systems', Role: 'QA Specialist', User: '$47000', Currency: '$ Dollar', Company: 'Unpaid', name: 'FusionWorks' },
-  { Phone: '#516123255', vendor: 'FutureTech Solutions', Role: 'Project Manager', User: '$60000', Currency: 'Yen JPY', Company: 'Paid', name: 'PixelTech Innovations' },
-  { Phone: '#71813288', vendor: 'Visionary Partners', Role: 'Marketing Specialist', User: '$32000', Currency: '$ Dollar', Company: 'Paid', name: 'EcoWave Enterprises' },
-  { Phone: '#92029723', vendor: 'TechBridge', Role: 'Business Analyst', User: '$46000', Currency: '$ Dollar', Company: 'Unpaid', name: 'Skyline Analytics' },
-  { Phone: '#22333443', vendor: 'RedTech Inc.', Role: 'Sales Representative', User: '$39000', Currency: '$ Dollar', Company: 'Paid', name: 'StarBridge Solutions' },
-  { Phone: '#44555688', vendor: 'SolarFlare Energy', Role: 'HR Coordinator', User: '$54000', Currency: 'RS PKR', Company: 'Pending', name: 'SolarX Energy' },
-];
-
-
-
-
-// Calculate total companies, active companies, and pending payments
-const totalCompanies = companies.length;
-const activeCompanies = companies.filter(company => company.Company !== 'Unpaid').length;
-const pendingPayments = companies.filter(company => company.Company === 'Unpaid')
-  .reduce((acc, company) => acc + parseFloat(company.User.replace('$', '').replace(',', '')), 0).toFixed(2);
+import api from '../api';
 
 const CompanyListing = () => {
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async (page = 1, limit = 10) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get(`/directory/companies?page=${page}&limit=${limit}`);
+      setCompanies(response.data.data);
+      setMeta(response.data.meta);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch companies');
+      console.error('Error fetching companies:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalCompanies = meta.total;
+  const activeCompanies = companies.filter(company => company.isActive).length;
+  const inactiveCompanies = totalCompanies - activeCompanies;
   return (
     <div className="bg-white shadow-lg rounded-lg p-6">
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mt-4">
+          <p className="font-medium">Error loading companies</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <>
       <div className="flex justify-between gap-12">
         {/* Total Companies */}
         <div className="bg-gray-50 rounded-xl p-6 w-full flex items-center justify-between border border-gray-200">
@@ -55,11 +78,11 @@ const CompanyListing = () => {
           </div>
         </div>
 
-        {/* Pending Payments */}
+        {/* Inactive Companies */}
         <div className="bg-gray-50 rounded-xl p-6 w-full flex items-center justify-between border border-gray-200">
           <div>
-            <p className="text-sm font-medium text-gray-700">Pending Payments</p>
-            <p className="text-3xl font-bold text-black mt-1">${pendingPayments}</p>
+            <p className="text-sm font-medium text-gray-700">Inactive Companies</p>
+            <p className="text-3xl font-bold text-black mt-1">{inactiveCompanies}</p>
           </div>
           <div className="text-gray-500">
             <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,32 +111,34 @@ const CompanyListing = () => {
         <table className="min-w-full bg-white table-auto">
           <thead>
             <tr className="border-b bg-gray-100">
-                            <th className="py-3 px-6 text-left text-sm font-medium text-gray-700">Comany</th>
-
+              <th className="py-3 px-6 text-left text-sm font-medium text-gray-700">Company Name</th>
+              <th className="py-3 px-6 text-left text-sm font-medium text-gray-700">Code</th>
+              <th className="py-3 px-6 text-left text-sm font-medium text-gray-700">Description</th>
+              <th className="py-3 px-6 text-left text-sm font-medium text-gray-700">Country</th>
               <th className="py-3 px-6 text-left text-sm font-medium text-gray-700">Status</th>
-              <th className="py-3 px-6 text-left text-sm font-medium text-gray-700">Vendor</th>
-              <th className="py-3 px-6 text-left text-sm font-medium text-gray-700">Phone</th>
+              <th className="py-3 px-6 text-left text-sm font-medium text-gray-700">Created At</th>
             </tr>
           </thead>
           <tbody>
-            {companies.map((company, index) => (
-              <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
-                                                <td className="py-3 px-6 text-sm text-gray-700">{company.name}</td>
-
-                <td className={`py-3 px-6 text-sm ${company.Company === 'Paid' ? 'text-green-600' : company.Company === 'Unpaid' ? 'text-red-600' : 'text-yellow-600'}`}>
-                  <span className={`px-3 py-1 rounded-lg ${company.Company === 'Paid' ? 'bg-green-100' : company.Company === 'Unpaid' ? 'bg-red-100' : 'bg-yellow-100'}`}>
-                    {company.Company}
+            {companies.map((company) => (
+              <tr key={company.id} className="border-b border-gray-200 hover:bg-gray-50">
+                <td className="py-3 px-6 text-sm text-gray-700">{company.name}</td>
+                <td className="py-3 px-6 text-sm text-gray-700">{company.code}</td>
+                <td className="py-3 px-6 text-sm text-gray-700">{company.description || 'N/A'}</td>
+                <td className="py-3 px-6 text-sm text-gray-700">{company.country || 'N/A'}</td>
+                <td className="py-3 px-6 text-sm">
+                  <span className={`px-3 py-1 rounded-lg ${company.isActive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                    {company.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-
-                <td className="py-3 px-6 text-sm text-gray-700">{company.vendor}</td>
-                <td className="py-3 px-6 text-sm text-gray-700">{company.Phone}</td>
-                
+                <td className="py-3 px-6 text-sm text-gray-700">{new Date(company.createdAt).toLocaleDateString()}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      </>
+      )}
     </div>
   );
 }

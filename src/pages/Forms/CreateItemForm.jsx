@@ -1,7 +1,8 @@
 // CreateItemForm.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BaseUrl } from "../../App";
+import api from "../../api";
 
 const DUMMY_PAYLOAD = {
     companyId: "cmhgnppki0001b9k8afhf2ihn",
@@ -29,6 +30,36 @@ const DUMMY_PAYLOAD = {
 
 export default function CreateItemForm() {
     const navigate = useNavigate();
+
+    const [companies, setCompanies] = useState([]);
+    const [uoms, setUoms] = useState([]);
+    const [currencies, setCurrencies] = useState([]);
+    const [vendors, setVendors] = useState([]);
+    const [loadingData, setLoadingData] = useState(true);
+
+    useEffect(() => {
+        fetchDropdownData();
+    }, []);
+
+    const fetchDropdownData = async () => {
+        try {
+            setLoadingData(true);
+            const [companiesRes, uomsRes, currenciesRes, vendorsRes] = await Promise.all([
+                api.get('/directory/companies?all=true'),
+                api.get('/directory/uoms?all=true'),
+                api.get('/directory/currencies?all=true'),
+                api.get('/directory/vendors?all=true')
+            ]);
+            setCompanies(companiesRes.data.data || companiesRes.data);
+            setUoms(uomsRes.data.data || uomsRes.data);
+            setCurrencies(currenciesRes.data.data || currenciesRes.data);
+            setVendors(vendorsRes.data.data || vendorsRes.data);
+        } catch (err) {
+            console.error('Error fetching dropdown data:', err);
+        } finally {
+            setLoadingData(false);
+        }
+    };
 
     const [formData, setFormData] = useState({
         companyId: "",
@@ -62,7 +93,15 @@ export default function CreateItemForm() {
     // Load dummy data (one-click fill)
     // -----------------------------------------------------------------
     const loadDummy = () => {
-        setFormData(DUMMY_PAYLOAD);
+        if (companies.length > 0) {
+            setFormData({
+                ...DUMMY_PAYLOAD,
+                companyId: companies[0]?.id || "",
+                uomId: uoms[0]?.id || "",
+                currencyId: currencies[0]?.id || "",
+                preferredVendorId: vendors[0]?.id || ""
+            });
+        }
         setErrors({});
         setMessage("");
     };
@@ -130,7 +169,7 @@ export default function CreateItemForm() {
         };
 
         try {
-            const res = await fetch(`${BaseUrl}/items`, {
+            const res = await fetch(`${BaseUrl}/directory/items`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -192,78 +231,7 @@ export default function CreateItemForm() {
     // -----------------------------------------------------------------
     return (
         <div className="w-full space-y-8">
-            {/* Overview Cards – unchanged */}
-             <div className="bg-white p-6 rounded-2xl shadow-sm">
-                    <h2 className="text-lg font-semibold text-gray-700 mb-4">
-                        Item Overview
-                    </h2>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {/* Total Vendors */}
-                        <div className="bg-gray-50 rounded-xl p-5 flex items-center justify-between border border-gray-200">
-                            <div>
-                                <p className="text-sm font-medium text-gray-700">Total Vendors</p>
-                                <p className="text-3xl font-bold text-black mt-1">248</p>
-                            </div>
-                            <div className="text-gray-500">
-                                <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        {/* Active Vendors */}
-                        <div className="bg-gray-50 rounded-xl p-5 flex items-center justify-between border border-gray-200">
-                            <div>
-                                <p className="text-sm font-medium text-gray-700">Active Vendors</p>
-                                <p className="text-3xl font-bold text-black mt-1">192</p>
-                            </div>
-                            <div className="text-gray-500">
-                                <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        {/* Pending Payments */}
-                        <div className="bg-gray-50 rounded-xl p-5 flex items-center justify-between border border-gray-200">
-                            <div>
-                                <p className="text-sm font-medium text-gray-700">Pending Payments</p>
-                                <p className="text-3xl font-bold text-black mt-1">$12.4k</p>
-                            </div>
-                            <div className="text-gray-500">
-                                <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        {/* Overdue Invoices */}
-                        <div className="bg-gray-50 rounded-xl p-5 flex items-center justify-between border border-gray-200">
-                            <div>
-                                <p className="text-sm font-medium text-gray-700">Overdue Invoices</p>
-                                <p className="text-3xl font-bold  mt-1">7</p>
-                            </div>
-
-                            <div className="text-red-500">
-                                <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={loadDummy}
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                        >
-                            Load Dummy Data
-                        </button>
-                    </div>
-                </div>
+      
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-xl">
@@ -272,18 +240,24 @@ export default function CreateItemForm() {
 
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* ---------- Company ID ---------- */}
+                    {/* ---------- Company ---------- */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Company ID *</label>
-                        <input
-                            type="text"
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Company *</label>
+                        <select
                             name="companyId"
                             value={formData.companyId}
                             onChange={handleChange}
-                            className={`w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition ${errors.companyId ? "border-red-500" : "border-gray-300"
+                            className={`w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition bg-white ${errors.companyId ? "border-red-500" : "border-gray-300"
                                 }`}
-                            placeholder="cmhgnppki0001b9k8afhf2ihn"
-                        />
+                            disabled={loadingData}
+                        >
+                            <option value="">Select Company</option>
+                            {companies.map((company) => (
+                                <option key={company.id} value={company.id}>
+                                    {company.name} ({company.code})
+                                </option>
+                            ))}
+                        </select>
                         {errors.companyId && <p className="text-red-500 text-xs mt-1">{errors.companyId}</p>}
                     </div>
 
@@ -343,17 +317,23 @@ export default function CreateItemForm() {
                         />
                     </div>
 
-                    {/* ---------- UOM ID ---------- */}
+                    {/* ---------- UOM ---------- */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">UOM ID</label>
-                        <input
-                            type="text"
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Unit of Measure</label>
+                        <select
                             name="uomId"
                             value={formData.uomId}
                             onChange={handleChange}
-                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                            placeholder="cmhhgj0gg0003b988eibo7htm"
-                        />
+                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition bg-white"
+                            disabled={loadingData}
+                        >
+                            <option value="">Select UOM</option>
+                            {uoms.map((uom) => (
+                                <option key={uom.id} value={uom.id}>
+                                    {uom.name} ({uom.code})
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* ---------- Unit Price ---------- */}
@@ -386,17 +366,23 @@ export default function CreateItemForm() {
                         />
                     </div>
 
-                    {/* ---------- Currency ID ---------- */}
+                    {/* ---------- Currency ---------- */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Currency ID</label>
-                        <input
-                            type="text"
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <select
                             name="currencyId"
                             value={formData.currencyId}
                             onChange={handleChange}
-                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                            placeholder="cmhgo5i4d0001b98ooo7d8y7o"
-                        />
+                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition bg-white"
+                            disabled={loadingData}
+                        >
+                            <option value="">Select Currency</option>
+                            {currencies.map((currency) => (
+                                <option key={currency.id} value={currency.id}>
+                                    {currency.name} ({currency.code}) - {currency.symbol}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* ---------- Tax Rate ---------- */}
@@ -452,17 +438,23 @@ export default function CreateItemForm() {
                         />
                     </div>
 
-                    {/* ---------- Preferred Vendor ID ---------- */}
+                    {/* ---------- Preferred Vendor ---------- */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Vendor ID</label>
-                        <input
-                            type="text"
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Vendor</label>
+                        <select
                             name="preferredVendorId"
                             value={formData.preferredVendorId}
                             onChange={handleChange}
-                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                            placeholder="cmhhgkamz0005b988u95lfym6"
-                        />
+                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition bg-white"
+                            disabled={loadingData}
+                        >
+                            <option value="">Select Vendor</option>
+                            {vendors.map((vendor) => (
+                                <option key={vendor.id} value={vendor.id}>
+                                    {vendor.name} ({vendor.code})
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* ---------- Specifications (JSON string) ---------- */}

@@ -1,13 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import InvoiceEditor from './InvoiceEditor';
+import api from '../../api';
 
 const PurchaseOrderForm = () => {
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState('A00001');
   const [purchaseOrderDate, setPurchaseOrderDate] = useState('Nov 05, 2025');
   const [businessName, setBusinessName] = useState('');
-  const [vendorBusinessName, setVendorBusinessName] = useState('');
+  const [companyId, setCompanyId] = useState('');
+  const [vendorId, setVendorId] = useState('');
   const [currency, setCurrency] = useState('Pakistani Rupee(PKR, PKRs)');
   const [businessLogo, setBusinessLogo] = useState(null);
+  const [companies, setCompanies] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
+  const [loadingVendors, setLoadingVendors] = useState(false);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  useEffect(() => {
+    if (companyId) {
+      fetchVendors(companyId);
+      setVendorId(''); // Reset vendor selection when company changes
+    } else {
+      setVendors([]);
+      setVendorId('');
+    }
+  }, [companyId]);
+
+  const fetchCompanies = async () => {
+    try {
+      setLoadingCompanies(true);
+      const res = await api.get('/directory/companies?all=true');
+      setCompanies(res.data.data || res.data);
+    } catch (err) {
+      console.error('Error fetching companies:', err);
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
+  const fetchVendors = async (selectedCompanyId) => {
+    try {
+      setLoadingVendors(true);
+      const res = await api.get(`/directory/vendors?companyId=${selectedCompanyId}&all=true`);
+      setVendors(res.data.data || res.data);
+    } catch (err) {
+      console.error('Error fetching vendors:', err);
+      setVendors([]);
+    } finally {
+      setLoadingVendors(false);
+    }
+  };
 
   // Handle business logo upload
   const handleLogoChange = (event) => {
@@ -76,6 +121,26 @@ const PurchaseOrderForm = () => {
           <h3 className="text-lg font-medium mb-4">Your Details</h3>
           <div className="space-y-4">
             <div>
+              <label htmlFor="companyId" className="block text-sm font-medium text-gray-700">
+                Select Company: <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="companyId"
+                value={companyId}
+                onChange={(e) => setCompanyId(e.target.value)}
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                required
+                disabled={loadingCompanies}
+              >
+                <option value="">{loadingCompanies ? 'Loading companies...' : 'Select Company'}</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name} ({company.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label htmlFor="businessName" className="block text-sm font-medium text-gray-700">Your Business Name:</label>
               <input
                 id="businessName"
@@ -107,15 +172,26 @@ const PurchaseOrderForm = () => {
           <h3 className="text-lg font-medium mb-4">Vendor's Details</h3>
           <div className="space-y-4">
             <div>
-              <label htmlFor="vendorBusinessName" className="block text-sm font-medium text-gray-700">Vendor's Business Name:</label>
-              <input
-                id="vendorBusinessName"
-                type="text"
-                value={vendorBusinessName}
-                onChange={(e) => setVendorBusinessName(e.target.value)}
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <label htmlFor="vendorId" className="block text-sm font-medium text-gray-700">
+                Select Vendor: <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="vendorId"
+                value={vendorId}
+                onChange={(e) => setVendorId(e.target.value)}
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 required
-              />
+                disabled={!companyId || loadingVendors}
+              >
+                <option value="">
+                  {!companyId ? 'Select a company first' : loadingVendors ? 'Loading vendors...' : vendors.length === 0 ? 'No vendors available for this company' : 'Select Vendor'}
+                </option>
+                {vendors.map((vendor) => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.name} ({vendor.code}) - {vendor.email}
+                  </option>
+                ))}
+              </select>
             </div>
             {/* Country Field */}
             <div>

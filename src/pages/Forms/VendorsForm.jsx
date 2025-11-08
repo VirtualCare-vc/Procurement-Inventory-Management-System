@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BaseUrl } from "../../App";
+import api from "../../api";
 
 export default function VendorForm() {
   const [formData, setFormData] = useState({
@@ -16,6 +17,30 @@ export default function VendorForm() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const [companies, setCompanies] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
+
+  const fetchDropdownData = async () => {
+    try {
+      setLoadingData(true);
+      const [companiesRes, currenciesRes] = await Promise.all([
+        api.get('/directory/companies?all=true'),
+        api.get('/directory/currencies?all=true')
+      ]);
+      setCompanies(companiesRes.data.data || companiesRes.data);
+      setCurrencies(currenciesRes.data.data || currenciesRes.data);
+    } catch (err) {
+      console.error('Error fetching dropdown data:', err);
+      setMessage({ type: "error", text: "Failed to load form data" });
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -45,7 +70,7 @@ export default function VendorForm() {
     }
 
     try {
-const res = await fetch(`${BaseUrl}/vendors`, {
+const res = await fetch(`${BaseUrl}/directory/vendors`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,17 +106,19 @@ const res = await fetch(`${BaseUrl}/vendors`, {
   };
 
   const loadDemo = () => {
-    setFormData({
-      companyId: "cmhgnppki0001b9k8afhf2ihn",
-      name: "Vendor Name",
-      code: "VEND0021",
-      email: "vendor@example.com",
-      phone: "+1234567890",
-      address: "123 Vendor St",
-      taxNumber: "TAX123456",
-      currencyId: "cmhgo5i4d0001b98ooo7d8y7o",
-      isActive: true,
-    });
+    if (companies.length > 0 && currencies.length > 0) {
+      setFormData({
+        companyId: companies[0]?.id || "",
+        name: "Vendor Name",
+        code: "VEND0021",
+        email: "vendor@example.com",
+        phone: "+1234567890",
+        address: "123 Vendor St",
+        taxNumber: "TAX123456",
+        currencyId: currencies[0]?.id || "",
+        isActive: true,
+      });
+    }
     setMessage({ type: "", text: "" });
   };
 
@@ -271,33 +298,45 @@ const res = await fetch(`${BaseUrl}/vendors`, {
             />
           </div>
 
-          {/* Company ID */}
+          {/* Company */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Company ID <span className="text-red-500">*</span>
+              Company <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
+            <select
               name="companyId"
               value={formData.companyId}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
-              placeholder="COMP001"
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition bg-white"
               required
-            />
+              disabled={loadingData}
+            >
+              <option value="">Select Company</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name} ({company.code})
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Currency ID */}
+          {/* Currency */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Currency ID</label>
-            <input
-              type="text"
+            <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+            <select
               name="currencyId"
               value={formData.currencyId}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
-              placeholder="USD"
-            />
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition bg-white"
+              disabled={loadingData}
+            >
+              <option value="">Select Currency</option>
+              {currencies.map((currency) => (
+                <option key={currency.id} value={currency.id}>
+                  {currency.name} ({currency.code}) - {currency.symbol}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Active Checkbox */}

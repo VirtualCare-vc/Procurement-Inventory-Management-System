@@ -1,9 +1,9 @@
 // src/api.js
 import axios from "axios";
-import { BaseUrl } from "../App";
+import { BaseUrl } from "./App";
 
 const api = axios.create({
-  baseURL: BaseUrl,
+  baseURL: "http://192.168.100.139:3000",
 });
 
 api.interceptors.request.use((config) => {

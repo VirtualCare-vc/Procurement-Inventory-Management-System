@@ -34,9 +34,11 @@ import UserListing from './pages/UserListing';
 import ItemListing from "./pages/ItemListing";  
 import PurchaseOrderForm from "./pages/Forms/PurchaseOrderForm ";
 import PurchaseCycle from "./pages/PurchaseCycle";
+import PurchaseOrderListing from "./pages/PurchaseOrderListing";
+import CreatePurchaseOrderForm from "./pages/Forms/CreatePurchaseOrderForm";
 
 // Base URL
-export const BaseUrl = "http://192.168.100.18:3000";
+export const BaseUrl = "http://192.168.100.139:3000";
 
 function App() {
   return (
@@ -65,8 +67,10 @@ function App() {
             <Route path="/CompanyListing" element={<CompanyListing />} />
             <Route path="/UserListing" element={<UserListing />} />
             <Route path="/ItemListing" element={<ItemListing />} />
-            <Route path="/PurchaseOrderForm" element={<PurchaseOrderForm />} /> 
-              <Route path="/PurchaseCycle" element={<PurchaseCycle />} />
+            <Route path="/PurchaseOrderForm" element={<PurchaseOrderForm />} />
+            <Route path="/CreatePurchaseOrder" element={<CreatePurchaseOrderForm />} />
+            <Route path="/PurchaseOrderListing" element={<PurchaseOrderListing />} />
+            <Route path="/PurchaseCycle" element={<PurchaseCycle />} />
 
 
             <Route path="/AssignUserToVendorForm" element={<AssignUserToVendorForm />} />

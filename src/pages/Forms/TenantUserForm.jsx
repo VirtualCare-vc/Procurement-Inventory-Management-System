@@ -1,19 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BaseUrl } from "../../App";
+import api from "../../api";
 
 export default function TenantUserForm() {
   const [formData, setFormData] = useState({
     email: "demo.user@example.com",
     password: "Demo@123",
     fullName: "Demo User",
-    tenantId: "cmhgi0kl40001b95k8tgadnio",
-    companyIds: ["cmhgo64r90003b98o096apdaw"],
-    roleId: "contact",
+    tenantId: "cmhm8g82000000c9t79qf92db",
+    companyIds: [""],
+    roleId: "cmhm8g82700010c9td1o0rsny",
   });
 
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState(null);
   const [message, setMessage] = useState("");
+  const [companies, setCompanies] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [tenants, setTenants] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
+
+  const fetchDropdownData = async () => {
+    try {
+      setLoadingData(true);
+      const [companiesRes, rolesRes, tenantsRes] = await Promise.all([
+        api.get('/directory/companies?all=true'),
+        api.get('/directory/roles?all=true'),
+        api.get('/directory/my-tenant-info')
+      ]);
+      setCompanies(companiesRes.data.data || companiesRes.data);
+      setRoles(rolesRes.data.data || rolesRes.data);
+      // Handle tenant response - it's an array directly
+      setTenants(Array.isArray(tenantsRes.data) ? tenantsRes.data : [tenantsRes.data]);
+      
+      // Auto-select tenant if only one exists
+      if (tenantsRes.data && tenantsRes.data.length === 1) {
+        setFormData(prev => ({ ...prev, tenantId: tenantsRes.data[0].id }));
+      }
+    } catch (err) {
+      console.error('Error fetching dropdown data:', err);
+      setMessage('Failed to load form data');
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   // ✅ Handle field changes
   const handleChange = (e) => {
@@ -153,36 +187,48 @@ export default function TenantUserForm() {
             />
           </div>
 
-          {/* Tenant ID */}
-          <div>
+          {/* Tenant */}
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tenant ID
+              Tenant *
             </label>
-            <input
-              type="text"
+            <select
               name="tenantId"
               value={formData.tenantId}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none transition"
-              placeholder="Tenant ID"
+              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none transition bg-white"
               required
-            />
+              disabled={loadingData}
+            >
+              <option value="">Select Tenant</option>
+              {tenants.map((tenant) => (
+                <option key={tenant.id} value={tenant.id}>
+                  {tenant.name} ({tenant.code})
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Company IDs */}
+          {/* Companies */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Company IDs
+              Companies *
             </label>
             {formData.companyIds.map((companyId, index) => (
               <div key={index} className="flex gap-2 mb-2">
-                <input
-                  type="text"
+                <select
                   value={companyId}
                   onChange={(e) => handleCompanyChange(index, e.target.value)}
-                  placeholder="Enter company ID"
-                  className="flex-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                />
+                  className="flex-1 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none transition bg-white"
+                  disabled={loadingData}
+                >
+                  <option value="">Select Company</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name} ({company.code})
+                    </option>
+                  ))}
+                </select>
                 {formData.companyIds.length > 1 && (
                   <button
                     type="button"
@@ -203,20 +249,26 @@ export default function TenantUserForm() {
             </button>
           </div>
 
-          {/* Role ID */}
+          {/* Role */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Role ID
+              Role *
             </label>
-            <input
-              type="text"
+            <select
               name="roleId"
               value={formData.roleId}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none transition"
-              placeholder="Role ID"
+              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none transition bg-white"
               required
-            />
+              disabled={loadingData}
+            >
+              <option value="">Select Role</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

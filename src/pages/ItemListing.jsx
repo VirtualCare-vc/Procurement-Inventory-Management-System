@@ -1,28 +1,93 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-
-const items = [
-  { status: 'In Stock', date: 'Apr 14, 2023', item: 'Laptop', category: 'Electronics', price: '$1000', brand: 'Brand A' },
-  { status: 'Out of Stock', date: 'Apr 14, 2023', item: 'Smartphone', category: 'Electronics', price: '$800', brand: 'Brand B' },
-  { status: 'Low Stock', date: 'Apr 14, 2023', item: 'Headphones', category: 'Accessories', price: '$150', brand: 'Brand C' },
-  { status: 'In Stock', date: 'Apr 14, 2023', item: 'Tablet', category: 'Electronics', price: '$500', brand: 'Brand D' },
-  { status: 'Low Stock', date: 'Apr 14, 2023', item: 'Wireless Mouse', category: 'Accessories', price: '$30', brand: 'Brand E' },
-];
-
-
-const totalItems = items.length;
-const inStockItems = items.filter(item => item.status === 'In Stock').length;
-const lowStockItems = items.filter(item => item.status === 'Low Stock').length;
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../api';
 
 const ItemListing = () => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [openDropdown, setOpenDropdown] = useState(null);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchItems = async (page = 1, limit = 10) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get(`/directory/items?page=${page}&limit=${limit}`);
+      setItems(response.data.data);
+      setMeta(response.data.meta);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch items');
+      console.error('Error fetching items:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalItems = meta.total;
+  const activeItems = items.filter(item => item.isActive).length;
+  const inactiveItems = totalItems - activeItems;
 
   const toggleDropdown = (index) => {
     setOpenDropdown(openDropdown === index ? null : index);
   };
 
+  const handleView = (item) => {
+    console.log('View item:', item);
+  };
+
+  const handleEdit = (item) => {
+    console.log('Edit item:', item);
+    navigate('/CreateItemForm', { state: { item } });
+  };
+
+  const handleDelete = async (item) => {
+    if (window.confirm(`Are you sure you want to delete ${item.name}?`)) {
+      try {
+        await api.delete(`/directory/items/${item.id}`);
+        fetchItems();
+        setOpenDropdown(null);
+      } catch (err) {
+        alert('Failed to delete item: ' + (err.response?.data?.message || err.message));
+      }
+    }
+  };
+
   return (
     <div className="bg-white shadow-lg rounded-lg p-4 sm:p-6">
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mt-4">
+          <p className="font-medium">Error loading items</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <>
       {/* Summary Cards */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:gap-6 gap-4">
         {/* Total Items */}
@@ -43,11 +108,11 @@ const ItemListing = () => {
           </div>
         </div>
 
-        {/* In Stock Items */}
+        {/* Active Items */}
         <div className="bg-gray-50 rounded-xl p-4 sm:p-6 flex items-center justify-between border border-gray-200 w-full">
           <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-700">In Stock</p>
-            <p className="text-2xl sm:text-3xl font-bold text-black mt-1">{inStockItems}</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-700">Active Items</p>
+            <p className="text-2xl sm:text-3xl font-bold text-black mt-1">{activeItems}</p>
           </div>
           <div className="text-gray-500">
             <svg className="w-7 h-7 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,11 +126,11 @@ const ItemListing = () => {
           </div>
         </div>
 
-        {/* Low Stock Items */}
+        {/* Inactive Items */}
         <div className="bg-gray-50 rounded-xl p-4 sm:p-6 flex items-center justify-between border border-gray-200 w-full">
           <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-700">Low Stock</p>
-            <p className="text-2xl sm:text-3xl font-bold text-black mt-1">{lowStockItems}</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-700">Inactive Items</p>
+            <p className="text-2xl sm:text-3xl font-bold text-black mt-1">{inactiveItems}</p>
           </div>
           <div className="text-gray-500">
             <svg className="w-7 h-7 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +147,7 @@ const ItemListing = () => {
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-6 mb-4 gap-3">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-800 text-center sm:text-left">Item Listings</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-gray-800 text-center sm:text-left">Item </h2>
         <div className="flex flex-col sm:flex-row justify-center sm:justify-end gap-2 sm:gap-3">
           <Link to="/CreateItemForm">
             <button className="bg-blue-500 text-white px-4 sm:px-6 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition duration-300 w-full sm:w-auto">
@@ -102,82 +167,85 @@ const ItemListing = () => {
         <table className="min-w-full bg-white table-auto">
           <thead>
             <tr className="border-b bg-gray-100">
-              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Item</th>
-                            <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Status</th>
-
+              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Item Name</th>
+              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Code</th>
+              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Description</th>
               <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Category</th>
-              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Price</th>
-              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Brand</th>
+              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Unit Price</th>
+              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Currency</th>
+              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">UOM</th>
+              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Vendor</th>
+              <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Status</th>
               <th className="py-3 px-4 sm:px-6 text-left text-xs sm:text-sm font-medium text-gray-700">Action</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item, index) => (
-              <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
-                
-                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.item}</td>
-                <td
-                  className={`py-3 px-4 sm:px-6 text-xs sm:text-sm ${
-                    item.status === 'In Stock'
-                      ? 'text-green-600'
-                      : item.status === 'Out of Stock'
-                      ? 'text-red-600'
-                      : 'text-yellow-600'
-                  }`}
-                >
-                  <span
-                    className={`px-2 sm:px-3 py-1 rounded-lg ${
-                      item.status === 'In Stock'
-                        ? 'bg-green-100'
-                        : item.status === 'Out of Stock'
-                        ? 'bg-red-100'
-                        : 'bg-yellow-100'
-                    }`}
-                  >
-                    {item.status}
+              <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50">
+                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.name}</td>
+                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.code}</td>
+                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.description || 'N/A'}</td>
+                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.category || 'N/A'}</td>
+                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.unitPrice}</td>
+                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.currency?.code || 'N/A'}</td>
+                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.uom?.code || 'N/A'}</td>
+                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.preferredVendor?.name || 'N/A'}</td>
+                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm">
+                  <span className={`px-2 sm:px-3 py-1 rounded-lg ${item.isActive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                    {item.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.category}</td>
-                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.price}</td>
-                <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm text-gray-700">{item.brand}</td>
                 <td className="py-3 px-4 sm:px-6 text-xs sm:text-sm relative">
-                  <button
-                    className="text-gray-500 hover:text-blue-800"
-                    onClick={() => toggleDropdown(index)}
-                  >
-                    <svg
-                      fill="currentColor"
-                      height="18"
-                      width="18"
-                      viewBox="0 -960 960 960"
-                      className="cursor-pointer"
+                  <div ref={openDropdown === index ? dropdownRef : null}>
+                    <button
+                      className="text-gray-500 hover:text-blue-800 p-1"
+                      onClick={() => toggleDropdown(index)}
                     >
-                      <path d="M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z" />
-                    </svg>
-                  </button>
+                      <svg
+                        fill="currentColor"
+                        height="18"
+                        width="18"
+                        viewBox="0 -960 960 960"
+                        className="cursor-pointer"
+                      >
+                        <path d="M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z" />
+                      </svg>
+                    </button>
 
-                  {/* Dropdown */}
-                  {openDropdown === index && (
-                    <div className="absolute right-0 sm:right-60 top-8 bg-white shadow-lg rounded-lg w-28 h-fit sm:w-32 z-10 ">
-                      <ul>
-                        <li className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
-                          View
-                        </li>
-                        <li className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
-                          Add
-                        </li>
-                        <li className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-red-600 hover:bg-gray-100 cursor-pointer">
-                          Delete
-                        </li>
-                      </ul>
-                    </div>
-                  )}
+                    {/* Dropdown */}
+                    {openDropdown === index && (
+                      <div className="absolute right-0 mt-2 bg-white shadow-xl rounded-lg w-32 sm:w-36 z-50 border border-gray-200">
+                        <ul className="py-1">
+                          <li 
+                            onClick={() => { handleView(item); setOpenDropdown(null); }}
+                            className="px-4 py-2 text-xs sm:text-sm text-gray-700 hover:bg-blue-50 cursor-pointer transition-colors"
+                          >
+                            View
+                          </li>
+                          <li 
+                            onClick={() => { handleEdit(item); setOpenDropdown(null); }}
+                            className="px-4 py-2 text-xs sm:text-sm text-gray-700 hover:bg-blue-50 cursor-pointer transition-colors"
+                          >
+                            Edit
+                          </li>
+                          <li 
+                            onClick={() => handleDelete(item)}
+                            className="px-4 py-2 text-xs sm:text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors border-t border-gray-100"
+                          >
+                            Delete
+                          </li>
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      </>
+      )}
     </div>
   );
 };
